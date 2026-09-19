@@ -14,9 +14,6 @@ import (
 	"lamarankerja/internal/store"
 )
 
-// barisHeader adalah baris ke-4 di kedua sheet; data mulai baris ke-5.
-const barisHeader = 4
-
 type Hasil struct {
 	LamaranMasuk    int
 	LamaranDilewati int
@@ -42,9 +39,16 @@ func Import(ctx context.Context, st *store.Store, path string) (Hasil, error) {
 	return h, nil
 }
 
+// Sheet lamaran bisa bernama "Full-Time" (tracker Excel lama) atau "Lamaran"
+// (hasil export aplikasi ini sendiri).
+var sheetLamaran = []string{"Full-Time", "Lamaran"}
+
 func importLamaran(ctx context.Context, st *store.Store, f *excelize.File, h *Hasil) error {
-	const sheet = "Full-Time"
-	rows, err := bacaSheet(f, sheet)
+	sheet, ok := cariSheet(f, sheetLamaran...)
+	if !ok {
+		return fmt.Errorf("sheet lamaran tidak ditemukan (dicoba: %s)", strings.Join(sheetLamaran, ", "))
+	}
+	rows, err := bacaSheet(f, sheet, "Perusahaan")
 	if err != nil {
 		return err
 	}
@@ -102,8 +106,11 @@ func importLamaran(ctx context.Context, st *store.Store, f *excelize.File, h *Ha
 }
 
 func importFreelance(ctx context.Context, st *store.Store, f *excelize.File, h *Hasil) error {
-	const sheet = "Freelance"
-	rows, err := bacaSheet(f, sheet)
+	sheet, ok := cariSheet(f, "Freelance")
+	if !ok {
+		return fmt.Errorf("sheet Freelance tidak ditemukan")
+	}
+	rows, err := bacaSheet(f, sheet, "Klien")
 	if err != nil {
 		return err
 	}
@@ -216,20 +223,51 @@ func (b baris) tanggal(kolom string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("format tanggal %q tidak dikenali", raw)
 }
 
-func bacaSheet(f *excelize.File, sheet string) ([]baris, error) {
+// cariSheet mengembalikan nama sheet pertama dari kandidat yang benar-benar
+// ada di file (nama sheet bisa berbeda antara tracker Excel lama dan hasil
+// export aplikasi ini sendiri).
+func cariSheet(f *excelize.File, kandidat ...string) (string, bool) {
+	ada := f.GetSheetList()
+	for _, nama := range kandidat {
+		for _, s := range ada {
+			if s == nama {
+				return nama, true
+			}
+		}
+	}
+	return "", false
+}
+
+// bacaSheet membaca sheet dan mendeteksi baris headernya secara otomatis,
+// yaitu baris pertama yang punya sel bernilai kolomKunci (baris 1 di hasil
+// export aplikasi, baris 4 di tracker Excel lama yang punya judul & filter di atasnya).
+func bacaSheet(f *excelize.File, sheet, kolomKunci string) ([]baris, error) {
 	// RawCellValue supaya tanggal terbaca sebagai serial Excel, bukan string
 	// hasil format tampilan yang ambigu ("09-19-26" bisa berarti dua tanggal berbeda).
 	grid, err := f.GetRows(sheet, excelize.Options{RawCellValue: true})
 	if err != nil {
 		return nil, fmt.Errorf("sheet %s tidak terbaca: %w", sheet, err)
 	}
-	if len(grid) < barisHeader {
-		return nil, fmt.Errorf("sheet %s tidak punya baris header di baris %d", sheet, barisHeader)
+
+	idxHeader := -1
+	for i, row := range grid {
+		for _, cell := range row {
+			if strings.TrimSpace(cell) == kolomKunci {
+				idxHeader = i
+				break
+			}
+		}
+		if idxHeader >= 0 {
+			break
+		}
+	}
+	if idxHeader == -1 {
+		return nil, fmt.Errorf("sheet %s tidak punya baris header (kolom %q tidak ditemukan)", sheet, kolomKunci)
 	}
 
-	header := grid[barisHeader-1]
+	header := grid[idxHeader]
 	var out []baris
-	for i := barisHeader; i < len(grid); i++ {
+	for i := idxHeader + 1; i < len(grid); i++ {
 		row := baris{nomor: i + 1, sel: map[string]string{}}
 		for c, nama := range header {
 			nama = strings.TrimSpace(nama)

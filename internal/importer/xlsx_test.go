@@ -16,17 +16,17 @@ func TestTanggalDuaFormat(t *testing.T) {
 	defer f.Close()
 
 	kasus := []struct {
-		sheet, kolom, mau string
+		sheet, kunci, kolom, mau string
 	}{
-		{"Full-Time", "Tgl Apply", "2026-09-19"},
-		{"Full-Time", "Tgl Update Terakhir", "2026-09-19"},
-		{"Freelance", "Tgl Masuk Lead", "2026-09-10"},
-		{"Freelance", "Deadline Proposal", "2026-09-25"},
-		{"Freelance", "Deadline Project", "2026-10-20"},
+		{"Full-Time", "Perusahaan", "Tgl Apply", "2026-09-19"},
+		{"Full-Time", "Perusahaan", "Tgl Update Terakhir", "2026-09-19"},
+		{"Freelance", "Klien", "Tgl Masuk Lead", "2026-09-10"},
+		{"Freelance", "Klien", "Deadline Proposal", "2026-09-25"},
+		{"Freelance", "Klien", "Deadline Project", "2026-10-20"},
 	}
 
 	for _, k := range kasus {
-		rows, err := bacaSheet(f, k.sheet)
+		rows, err := bacaSheet(f, k.sheet, k.kunci)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -48,7 +48,7 @@ func TestNilaiNumerikTerbaca(t *testing.T) {
 	}
 	defer f.Close()
 
-	rows, err := bacaSheet(f, "Freelance")
+	rows, err := bacaSheet(f, "Freelance", "Klien")
 	if err != nil {
 		t.Fatal(err)
 	}
