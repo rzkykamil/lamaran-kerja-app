@@ -1,0 +1,23 @@
+{{define "paginasi"}}
+{{$pg := .Paginasi}}
+{{$f := .Filter}}
+{{$target := .Target}}
+<div class="paginasi">
+  <span class="paginasi__info">
+    {{if $pg.Total}}Menampilkan {{$pg.Dari}}&ndash;{{$pg.Sampai}} dari {{$pg.Total}} hasil{{else}}Tidak ada hasil{{end}}
+  </span>
+  {{if gt $pg.TotalHalaman 1}}
+  <span class="paginasi__tombol">
+    {{if $pg.AdaSebelumnya}}
+      <a href="{{$f.QueryHalaman $pg.Sebelumnya}}" class="btn btn--kecil"
+         hx-get="{{$f.QueryHalaman $pg.Sebelumnya}}" hx-target="#{{$target}}" hx-swap="outerHTML" hx-push-url="true">&laquo; Sebelumnya</a>
+    {{end}}
+    <span class="paginasi__angka">Halaman {{$pg.Halaman}} / {{$pg.TotalHalaman}}</span>
+    {{if $pg.AdaBerikutnya}}
+      <a href="{{$f.QueryHalaman $pg.Berikutnya}}" class="btn btn--kecil"
+         hx-get="{{$f.QueryHalaman $pg.Berikutnya}}" hx-target="#{{$target}}" hx-swap="outerHTML" hx-push-url="true">Berikutnya &raquo;</a>
+    {{end}}
+  </span>
+  {{end}}
+</div>
+{{end}}

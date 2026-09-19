@@ -1,0 +1,35 @@
+{{define "isi"}}
+<header class="topbar">
+  <div class="topbar__kiri">
+    <h1>Impor Data</h1>
+    <p>Unggah file Excel tracker lama (.xlsx) untuk memindahkan datanya ke sini.</p>
+  </div>
+</header>
+
+<main class="utama">
+  {{template "flash" .}}
+
+  <section class="kartu">
+    <div class="kartu__isi">
+      {{if .Data.Error}}<div class="flash flash--error">{{.Data.Error}}</div>{{end}}
+
+      <form method="post" action="/impor" enctype="multipart/form-data">
+        <div class="form-baris">
+          <div class="field field--lebar">
+            <label for="file">File Excel (.xlsx)</label>
+            <input type="file" id="file" name="file" accept=".xlsx" required>
+            <small>
+              Sheet <strong>Full-Time</strong> dan <strong>Freelance</strong> dibaca otomatis, header di baris ke-4.
+              Baris yang perusahaan/kliennya sudah ada (nama, posisi/project, dan tanggal sama) akan dilewati,
+              jadi file ini aman diunggah berkali-kali.
+            </small>
+          </div>
+        </div>
+        <div class="form-kaki">
+          <button type="submit" class="btn btn--utama">{{template "ikon-unggah"}} Impor Sekarang</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+{{end}}

@@ -1,0 +1,153 @@
+{{define "isi"}}
+{{$d := .Data.D}}
+<header class="topbar">
+  <div class="topbar__kiri">
+    <h1>Dashboard</h1>
+    <p>Ringkasan lamaran kerja dan pipeline freelance kamu.</p>
+  </div>
+  <div class="topbar__aksi">
+    <a href="/lamaran/baru" class="btn btn--utama">{{template "ikon-plus"}} Tambah Lamaran</a>
+    <a href="/freelance/baru" class="btn">{{template "ikon-plus"}} Tambah Project</a>
+  </div>
+</header>
+
+<main class="utama">
+  {{template "flash" .}}
+
+  <form method="post" action="/dashboard/target">
+    <div class="grid grid--kpi" style="margin-bottom:16px">
+      {{range $d.Targets}}
+      <div class="kpi">
+        <div class="kpi__label">{{.Label}}</div>
+        <div class="kpi__angka">
+          <span class="kpi__aktual">{{.Aktual}}</span>
+          <span class="kpi__target">/ <input type="number" name="{{.Key}}" value="{{.Target}}" min="0" max="999" aria-label="Target {{.Label}}"></span>
+        </div>
+        <div class="bar {{if ge .Progress 100}}bar--penuh{{end}}"><i style="width:{{.Progress}}%"></i></div>
+        <div class="kpi__catatan">{{.Catatan}}</div>
+      </div>
+      {{end}}
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:24px;flex-wrap:wrap">
+      <button type="submit" class="btn btn--kecil">Simpan target</button>
+      <span class="catatan-kecil">Angka di kotak kuning adalah target kamu &mdash; ubah lalu simpan.</span>
+    </div>
+  </form>
+
+  <div class="grid grid--2" style="margin-bottom:16px">
+    <section class="kartu">
+      <div class="kartu__kepala">
+        <div>
+          <h2>Funnel Lamaran Full-Time</h2>
+          <p>{{$d.TotalLamaran}} lamaran &middot; response rate {{persen $d.ResponseRate}}</p>
+        </div>
+      </div>
+      <div class="kartu__isi">
+        <div class="funnel">
+          {{range $d.FunnelFulltime}}
+          <div class="funnel__baris {{if eq .Jumlah 0}}funnel__baris--kosong{{end}}">
+            <div class="funnel__label">{{.Label}}</div>
+            <div class="funnel__track"><div class="funnel__isi" style="width:{{barWidth .Jumlah $.Data.MaxFunnel}}"></div></div>
+            <div class="funnel__nilai">{{.Jumlah}}</div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </section>
+
+    <section class="kartu">
+      <div class="kartu__kepala">
+        <div>
+          <h2>Pipeline Freelance</h2>
+          <p>{{$d.ProposalKeluar}} proposal keluar &middot; win rate {{persen $d.WinRate}}</p>
+        </div>
+      </div>
+      <div class="kartu__isi">
+        <div class="funnel">
+          {{range $d.FunnelFreelance}}
+          <div class="funnel__baris {{if eq .Jumlah 0}}funnel__baris--kosong{{end}}">
+            <div class="funnel__label">{{.Label}}</div>
+            <div class="funnel__track"><div class="funnel__isi" style="width:{{barWidth .Jumlah $.Data.MaxPipeline}}"></div></div>
+            <div class="funnel__nilai">{{.Jumlah}}</div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="kartu" style="margin-bottom:16px">
+    <div class="kartu__kepala">
+      <div>
+        <h2>Uang Freelance</h2>
+        <p>Semua nilai dihitung otomatis dari daftar project.</p>
+      </div>
+      <a href="/freelance" class="btn btn--kecil">Lihat project</a>
+    </div>
+    <div class="kartu__isi">
+      <div class="grid grid--uang">
+        <div class="uang uang--biru">
+          <div class="uang__label">Total pipeline</div>
+          <div class="uang__nilai">{{rupiah $d.TotalPipeline}}</div>
+        </div>
+        <div class="uang">
+          <div class="uang__label">Nilai tertimbang</div>
+          <div class="uang__nilai">{{rupiah $d.NilaiTertimbang}}</div>
+        </div>
+        <div class="uang uang--hijau">
+          <div class="uang__label">Sudah closing</div>
+          <div class="uang__nilai">{{rupiah $d.NilaiClosing}}</div>
+        </div>
+        <div class="uang uang--hijau">
+          <div class="uang__label">Uang masuk</div>
+          <div class="uang__nilai">{{rupiah $d.UangMasuk}}</div>
+        </div>
+        <div class="uang uang--merah">
+          <div class="uang__label">Sisa tagihan</div>
+          <div class="uang__nilai">{{rupiah $d.SisaTagihan}}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="kartu">
+    <div class="kartu__kepala">
+      <div>
+        <h2>Perlu Follow-up</h2>
+        <p>Lamaran yang sudah lewat tanggal follow-up, atau nganggur lebih dari 14 hari.</p>
+      </div>
+      {{if $d.PerluFollowUp}}<span class="badge badge--merah">{{len $d.PerluFollowUp}} perlu aksi</span>{{end}}
+    </div>
+    {{if $d.PerluFollowUp}}
+    <div class="tabel-bungkus">
+      <table class="tabel">
+        <thead>
+          <tr>
+            <th>Perusahaan</th><th>Posisi</th><th>Status</th>
+            <th>Umur</th><th>Follow-up</th><th>Next Action</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $d.PerluFollowUp}}
+          <tr class="{{if .FollowUpTelat}}perlu-aksi{{else}}nganggur{{end}}">
+            <td class="td-utama">{{.Perusahaan}}</td>
+            <td>{{.Posisi}}</td>
+            <td><span class="badge st-{{slug .Status}}">{{.Status}}</span></td>
+            <td class="td-num">{{.UmurHari}} hari</td>
+            <td>{{if .TglFollowUp}}{{tanggal .TglFollowUp}}{{else}}&mdash;{{end}}</td>
+            <td>{{if .NextAction}}{{.NextAction}}{{else}}<span class="catatan-kecil">belum diisi</span>{{end}}</td>
+            <td class="td-aksi"><a href="/lamaran/{{.ID}}/edit" class="btn btn--kecil">Update</a></td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="kosong">
+      <h3>Semua terkendali</h3>
+      <p>Tidak ada lamaran yang perlu di-follow up hari ini.</p>
+    </div>
+    {{end}}
+  </section>
+</main>
+{{end}}

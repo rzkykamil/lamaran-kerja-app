@@ -1,0 +1,43 @@
+{{define "isi"}}
+<header class="topbar">
+  <div class="topbar__kiri">
+    <h1>Pilihan Dropdown</h1>
+    <p>Pengganti sheet &ldquo;Lists&rdquo; di Excel &mdash; isi dropdown di semua form.</p>
+  </div>
+</header>
+
+<main class="utama">
+  {{template "flash" .}}
+
+  <div class="pilihan-grid">
+    {{range .Data.Kategori}}
+    {{$kat := .}}
+    <section class="kartu">
+      <div class="kartu__kepala">
+        <h2>{{.Label}}</h2>
+      </div>
+      <div class="kartu__isi">
+        <div class="chip-list">
+          {{range index $.Data.PerKategori $kat.Key}}
+          <span class="chip">
+            {{.Value}}
+            <form method="post" action="/pilihan/{{.ID}}/hapus"
+                  onsubmit="return confirm('Hapus pilihan {{.Value}}? Data lama yang sudah memakai nilai ini tidak berubah.')">
+              <button type="submit" title="Hapus {{.Value}}" aria-label="Hapus {{.Value}}">&times;</button>
+            </form>
+          </span>
+          {{else}}
+          <span class="catatan-kecil">Belum ada pilihan.</span>
+          {{end}}
+        </div>
+        <form method="post" action="/pilihan" class="chip-form">
+          <input type="hidden" name="category" value="{{$kat.Key}}">
+          <input type="text" name="value" placeholder="Tambah pilihan baru..." aria-label="Pilihan baru untuk {{$kat.Label}}" required>
+          <button type="submit" class="btn btn--kecil">Tambah</button>
+        </form>
+      </div>
+    </section>
+    {{end}}
+  </div>
+</main>
+{{end}}

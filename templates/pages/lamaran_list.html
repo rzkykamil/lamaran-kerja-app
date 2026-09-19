@@ -1,0 +1,123 @@
+{{define "isi"}}
+{{$f := .Data.Filter}}
+{{$p := .Data.Pilihan}}
+<header class="topbar">
+  <div class="topbar__kiri">
+    <h1>Lamaran Kerja</h1>
+    <p>Semua lamaran full-time yang sedang kamu jalani.</p>
+  </div>
+  <div class="topbar__aksi">
+    <a href="/impor" class="btn">{{template "ikon-unggah"}} Impor</a>
+    <a href="/lamaran/export?format=xlsx" class="btn">{{template "ikon-unduh"}} Excel</a>
+    <a href="/lamaran/export?format=csv" class="btn">{{template "ikon-unduh"}} CSV</a>
+    <a href="/lamaran/baru" class="btn btn--utama">{{template "ikon-plus"}} Tambah Lamaran</a>
+  </div>
+</header>
+
+<main class="utama">
+  {{template "flash" .}}
+
+  <section class="kartu">
+    <div class="kartu__kepala">
+      <form class="toolbar" hx-get="/lamaran" hx-target="#tabel-lamaran" hx-swap="outerHTML"
+            hx-trigger="submit, change from:select, keyup changed delay:350ms from:input[name='cari']"
+            hx-push-url="true">
+        <input class="cari" type="text" name="cari" value="{{$f.Cari}}"
+               placeholder="Cari perusahaan, posisi, lokasi..." aria-label="Cari lamaran">
+        <select name="status" aria-label="Filter status">
+          <option value="">Semua status</option>
+          {{range index $p "status_fulltime"}}
+            <option value="{{.}}" {{if eq $f.Status .}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+        <select name="prioritas" aria-label="Filter prioritas">
+          <option value="">Semua prioritas</option>
+          {{range index $p "prioritas"}}
+            <option value="{{.}}" {{if eq $f.Prioritas .}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+        <select name="sumber" aria-label="Filter sumber">
+          <option value="">Semua sumber</option>
+          {{range index $p "sumber_fulltime"}}
+            <option value="{{.}}" {{if eq $f.Sumber .}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+        <select name="urut" aria-label="Urutkan">
+          <option value="terbaru" {{if eq $f.Urut "terbaru"}}selected{{end}}>Terbaru dulu</option>
+          <option value="terlama" {{if eq $f.Urut "terlama"}}selected{{end}}>Terlama dulu</option>
+          <option value="umur" {{if eq $f.Urut "umur"}}selected{{end}}>Paling lama nganggur</option>
+          <option value="prioritas" {{if eq $f.Urut "prioritas"}}selected{{end}}>Prioritas tertinggi</option>
+          <option value="gaji" {{if eq $f.Urut "gaji"}}selected{{end}}>Gaji tertinggi</option>
+          <option value="nama" {{if eq $f.Urut "nama"}}selected{{end}}>Nama perusahaan</option>
+        </select>
+        <a href="/lamaran" class="btn btn--kecil">Reset</a>
+      </form>
+    </div>
+    {{template "tabel-lamaran" .Data}}
+  </section>
+</main>
+{{end}}
+
+{{define "tabel-lamaran"}}
+<div id="tabel-lamaran">
+  {{if .Items}}
+  <div class="tabel-bungkus">
+    <table class="tabel">
+      <thead>
+        <tr>
+          <th>Perusahaan / Posisi</th>
+          <th>Status</th>
+          <th>Prioritas</th>
+          <th>Tgl Apply</th>
+          <th class="td-num">Umur</th>
+          <th class="td-num">Ekspektasi</th>
+          <th>Follow-up</th>
+          <th>Next Action</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Items}}
+        <tr class="{{if .FollowUpTelat}}perlu-aksi{{else if .Nganggur}}nganggur{{end}}">
+          <td class="td-utama">
+            {{if .LinkLowongan}}<a href="{{.LinkLowongan}}" target="_blank" rel="noopener">{{.Perusahaan}}</a>{{else}}{{.Perusahaan}}{{end}}
+            <small>{{.Posisi}}{{if .Lokasi}} &middot; {{.Lokasi}}{{end}}{{if .TipeKerja}} &middot; {{.TipeKerja}}{{end}}</small>
+          </td>
+          <td>
+            <span class="badge st-{{slug .Status}}">{{.Status}}</span>
+            {{if gt .TahapKe 0}}<small class="catatan-kecil">tahap {{.TahapKe}}</small>{{end}}
+          </td>
+          <td><span class="badge st-{{slug .Prioritas}}">{{.Prioritas}}</span></td>
+          <td>{{tanggal .TglApply}}<small class="catatan-kecil">{{.Sumber}}</small></td>
+          <td class="td-num">{{.UmurHari}} hr</td>
+          <td class="td-num">{{if .EkspektasiGaji}}{{rupiahSingkat .EkspektasiGaji}}{{else}}&mdash;{{end}}</td>
+          <td>{{if .TglFollowUp}}{{tanggal .TglFollowUp}}{{else}}&mdash;{{end}}</td>
+          <td>{{if .NextAction}}{{.NextAction}}{{else}}<span class="catatan-kecil">&mdash;</span>{{end}}</td>
+          <td class="td-aksi">
+            <span class="aksi-inline">
+              <a href="/lamaran/{{.ID}}/edit" class="btn btn--kecil">Edit</a>
+              <form method="post" action="/lamaran/{{.ID}}/pindah-freelance"
+                    data-confirm="Pindahkan {{.Perusahaan}} ke Freelance?">
+                <button type="submit" class="btn btn--kecil">Pindah ke Freelance</button>
+              </form>
+              <form method="post" action="/lamaran/{{.ID}}/hapus"
+                    data-confirm="Hapus lamaran ke {{.Perusahaan}}?">
+                <button type="submit" class="btn btn--kecil btn--bahaya">Hapus</button>
+              </form>
+            </span>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{template "paginasi" (dict "Paginasi" .Paginasi "Filter" .Filter "Target" "tabel-lamaran")}}
+  {{else}}
+  <div class="kosong">
+    <h3>Belum ada lamaran di sini</h3>
+    <p>Kalau filternya sedang aktif, coba reset dulu. Atau tambah lamaran pertamamu.</p>
+    <a href="/lamaran/baru" class="btn btn--utama">{{template "ikon-plus"}} Tambah Lamaran</a>
+  </div>
+  {{end}}
+</div>
+{{end}}

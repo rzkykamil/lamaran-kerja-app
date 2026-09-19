@@ -1,0 +1,137 @@
+{{define "isi"}}
+{{$i := .Data.Item}}
+{{$p := .Data.Pilihan}}
+<header class="topbar">
+  <div class="topbar__kiri">
+    <h1>{{if .Data.Baru}}Tambah Lamaran{{else}}Edit Lamaran{{end}}</h1>
+    <p>{{if .Data.Baru}}Isi minimal nama perusahaan dan posisi.{{else}}{{$i.Perusahaan}} &middot; {{$i.Posisi}}{{end}}</p>
+  </div>
+  <div class="topbar__aksi">
+    <a href="/lamaran" class="btn">Kembali ke daftar</a>
+  </div>
+</header>
+
+<main class="utama">
+  {{if .Data.Error}}<div class="flash flash--error">{{.Data.Error}}</div>{{end}}
+
+  <form method="post" action="{{if .Data.Baru}}/lamaran{{else}}/lamaran/{{$i.ID}}{{end}}">
+    <div class="kartu">
+      <div class="kartu__isi">
+
+        <div class="form-grup">
+          <h3>Info Dasar</h3>
+          <div class="form-baris">
+            <div class="field">
+              <label for="perusahaan">Perusahaan <span class="wajib">*</span></label>
+              <input type="text" id="perusahaan" name="perusahaan" value="{{$i.Perusahaan}}" required autofocus>
+            </div>
+            <div class="field">
+              <label for="posisi">Posisi <span class="wajib">*</span></label>
+              <input type="text" id="posisi" name="posisi" value="{{$i.Posisi}}" required>
+            </div>
+            <div class="field">
+              <label for="lokasi">Lokasi</label>
+              <input type="text" id="lokasi" name="lokasi" value="{{$i.Lokasi}}" placeholder="Jakarta Selatan">
+            </div>
+            <div class="field">
+              <label for="tipe_kerja">Tipe Kerja</label>
+              <select id="tipe_kerja" name="tipe_kerja">
+                <option value="">&mdash; pilih &mdash;</option>
+                {{range index $p "tipe_kerja"}}<option value="{{.}}" {{if eq $i.TipeKerja .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="field">
+              <label for="sumber">Sumber Lowongan</label>
+              <select id="sumber" name="sumber">
+                <option value="">&mdash; pilih &mdash;</option>
+                {{range index $p "sumber_fulltime"}}<option value="{{.}}" {{if eq $i.Sumber .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="field">
+              <label for="ekspektasi_gaji">Ekspektasi Gaji</label>
+              <input type="text" inputmode="numeric" class="input-uang js-uang" id="ekspektasi_gaji"
+                     name="ekspektasi_gaji" value="{{if $i.EkspektasiGaji}}{{$i.EkspektasiGaji}}{{end}}" placeholder="8.000.000">
+            </div>
+            <div class="field field--lebar">
+              <label for="link_lowongan">Link Lowongan</label>
+              <input type="url" id="link_lowongan" name="link_lowongan" value="{{$i.LinkLowongan}}" placeholder="https://...">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grup">
+          <h3>Status &amp; Progres</h3>
+          <div class="form-baris">
+            <div class="field">
+              <label for="status">Status</label>
+              <select id="status" name="status">
+                {{range index $p "status_fulltime"}}<option value="{{.}}" {{if eq $i.Status .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="field">
+              <label for="tahap_ke">Tahap Ke-</label>
+              <input type="number" id="tahap_ke" name="tahap_ke" value="{{$i.TahapKe}}" min="0" max="20">
+            </div>
+            <div class="field">
+              <label for="prioritas">Prioritas</label>
+              <select id="prioritas" name="prioritas">
+                {{range index $p "prioritas"}}<option value="{{.}}" {{if eq $i.Prioritas .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="field">
+              <label for="tgl_apply">Tanggal Apply</label>
+              <input type="date" id="tgl_apply" name="tgl_apply" value="{{tanggalInput $i.TglApply}}">
+            </div>
+            <div class="field">
+              <label for="tgl_update_terakhir">Tanggal Update Terakhir</label>
+              <input type="date" id="tgl_update_terakhir" name="tgl_update_terakhir" value="{{tanggalInput $i.TglUpdateTerakhir}}">
+              <small>Dipakai untuk menghitung umur lamaran.</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grup">
+          <h3>Follow-up</h3>
+          <div class="form-baris">
+            <div class="field">
+              <label for="tgl_follow_up">Tanggal Follow-up</label>
+              <input type="date" id="tgl_follow_up" name="tgl_follow_up" value="{{tanggalInput $i.TglFollowUp}}">
+              <small>Kalau lewat tanggal ini, barisnya jadi merah.</small>
+            </div>
+            <div class="field">
+              <label for="kontak">Kontak (nama / email)</label>
+              <input type="text" id="kontak" name="kontak" value="{{$i.Kontak}}" placeholder="Bu Sari &mdash; sari@perusahaan.com">
+            </div>
+            <div class="field field--lebar">
+              <label for="next_action">Next Action</label>
+              <input type="text" id="next_action" name="next_action" value="{{$i.NextAction}}" placeholder="Kirim email follow-up ke HR">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grup" style="margin-bottom:0">
+          <h3>Catatan</h3>
+          <div class="field">
+            <textarea id="catatan" name="catatan" placeholder="Hasil interview, nama pewawancara, kesan, dll.">{{$i.Catatan}}</textarea>
+          </div>
+        </div>
+
+      </div>
+      <div class="kartu__isi" style="padding-top:0">
+        <div class="form-kaki">
+          <button type="submit" class="btn btn--utama">{{if .Data.Baru}}Simpan Lamaran{{else}}Simpan Perubahan{{end}}</button>
+          <a href="/lamaran" class="btn">Batal</a>
+          {{if not .Data.Baru}}
+          <span class="kanan">
+            <form method="post" action="/lamaran/{{$i.ID}}/hapus"
+                  onsubmit="return confirm('Hapus lamaran ke {{$i.Perusahaan}}?')">
+              <button type="submit" class="btn btn--bahaya">Hapus lamaran</button>
+            </form>
+          </span>
+          {{end}}
+        </div>
+      </div>
+    </div>
+  </form>
+</main>
+{{end}}

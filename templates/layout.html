@@ -1,0 +1,63 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Judul}} &middot; Tracker Lamaran</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/htmx.min.js" defer></script>
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+<div class="app">
+  {{template "sidebar" .}}
+  <div class="konten">
+    {{template "isi" .}}
+  </div>
+</div>
+<div class="modal-overlay" id="modal-konfirmasi" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-describedby="modal-konfirmasi-pesan">
+    <p class="modal__pesan" id="modal-konfirmasi-pesan"></p>
+    <div class="modal__aksi">
+      <button type="button" class="btn" data-modal-batal>Batal</button>
+      <button type="button" class="btn btn--utama" data-modal-lanjut>Lanjutkan</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>{{end}}
+
+{{define "sidebar"}}
+<aside class="sidebar">
+  <div class="sidebar__merek">
+    Tracker Karier
+    <span>Lamaran &amp; Freelance</span>
+  </div>
+  <nav class="nav">
+    <a href="/" class="{{if eq .Aktif "dashboard"}}aktif{{end}}">
+      {{template "ikon-dashboard"}}<span>Dashboard</span>
+    </a>
+    <a href="/lamaran" class="{{if eq .Aktif "lamaran"}}aktif{{end}}">
+      {{template "ikon-tas"}}<span>Lamaran Kerja</span>
+    </a>
+    <a href="/freelance" class="{{if eq .Aktif "freelance"}}aktif{{end}}">
+      {{template "ikon-dompet"}}<span>Freelance</span>
+    </a>
+    <a href="/pilihan" class="{{if eq .Aktif "pilihan"}}aktif{{end}}">
+      {{template "ikon-daftar"}}<span>Pilihan Dropdown</span>
+    </a>
+    <a href="/impor" class="{{if eq .Aktif "impor"}}aktif{{end}}">
+      {{template "ikon-unggah"}}<span>Impor Data</span>
+    </a>
+  </nav>
+  <div class="sidebar__kaki">
+    <form method="post" action="/logout">
+      <button type="submit">{{template "ikon-keluar"}}<span>Keluar</span></button>
+    </form>
+  </div>
+</aside>
+{{end}}
+
+{{define "flash"}}
+{{if .Flash}}<div class="flash flash--{{.FlashJenis}}">{{.Flash}}</div>{{end}}
+{{end}}

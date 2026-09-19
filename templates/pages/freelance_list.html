@@ -1,0 +1,134 @@
+{{define "isi"}}
+{{$f := .Data.Filter}}
+{{$p := .Data.Pilihan}}
+<header class="topbar">
+  <div class="topbar__kiri">
+    <h1>Project Freelance</h1>
+    <p>Pipeline lead, proposal, dan tagihan project kamu.</p>
+  </div>
+  <div class="topbar__aksi">
+    <a href="/impor" class="btn">{{template "ikon-unggah"}} Impor</a>
+    <a href="/freelance/export?format=xlsx" class="btn">{{template "ikon-unduh"}} Excel</a>
+    <a href="/freelance/export?format=csv" class="btn">{{template "ikon-unduh"}} CSV</a>
+    <a href="/freelance/baru" class="btn btn--utama">{{template "ikon-plus"}} Tambah Project</a>
+  </div>
+</header>
+
+<main class="utama">
+  {{template "flash" .}}
+
+  <section class="kartu">
+    <div class="kartu__kepala">
+      <form class="toolbar" hx-get="/freelance" hx-target="#tabel-freelance" hx-swap="outerHTML"
+            hx-trigger="submit, change from:select, keyup changed delay:350ms from:input[name='cari']"
+            hx-push-url="true">
+        <input class="cari" type="text" name="cari" value="{{$f.Cari}}"
+               placeholder="Cari klien, nama project, scope..." aria-label="Cari project">
+        <select name="status" aria-label="Filter status">
+          <option value="">Semua status</option>
+          {{range index $p "status_freelance"}}
+            <option value="{{.}}" {{if eq $f.Status .}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+        <select name="status_bayar" aria-label="Filter status bayar">
+          <option value="">Semua status bayar</option>
+          {{range index $p "status_bayar"}}
+            <option value="{{.}}" {{if eq $f.StatusBayar .}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+        <select name="sumber" aria-label="Filter sumber">
+          <option value="">Semua sumber</option>
+          {{range index $p "sumber_freelance"}}
+            <option value="{{.}}" {{if eq $f.Sumber .}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+        <select name="urut" aria-label="Urutkan">
+          <option value="terbaru" {{if eq $f.Urut "terbaru"}}selected{{end}}>Terbaru dulu</option>
+          <option value="nilai" {{if eq $f.Urut "nilai"}}selected{{end}}>Nilai terbesar</option>
+          <option value="weighted" {{if eq $f.Urut "weighted"}}selected{{end}}>Weighted terbesar</option>
+          <option value="sisa" {{if eq $f.Urut "sisa"}}selected{{end}}>Sisa tagihan terbesar</option>
+          <option value="deadline" {{if eq $f.Urut "deadline"}}selected{{end}}>Deadline terdekat</option>
+          <option value="klien" {{if eq $f.Urut "klien"}}selected{{end}}>Nama klien</option>
+        </select>
+        <a href="/freelance" class="btn btn--kecil">Reset</a>
+      </form>
+    </div>
+    {{template "tabel-freelance" .Data}}
+  </section>
+</main>
+{{end}}
+
+{{define "tabel-freelance"}}
+<div id="tabel-freelance">
+  {{if .Items}}
+  <div class="tabel-bungkus">
+    <table class="tabel">
+      <thead>
+        <tr>
+          <th>Klien / Project</th>
+          <th>Status</th>
+          <th class="td-num">Nilai</th>
+          <th class="td-num">Prob.</th>
+          <th class="td-num">Weighted</th>
+          <th>Status Bayar</th>
+          <th class="td-num">Sisa Tagihan</th>
+          <th>Deadline</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Items}}
+        <tr class="{{if .DeadlineTelat}}perlu-aksi{{end}}">
+          <td class="td-utama">
+            {{.Klien}}
+            <small>{{.NamaProject}}{{if .Stack}} &middot; {{.Stack}}{{end}}</small>
+          </td>
+          <td>
+            <span class="badge st-{{slug .Status}}">{{.Status}}</span>
+            {{if .Sumber}}<small class="catatan-kecil">{{.Sumber}}</small>{{end}}
+          </td>
+          <td class="td-num">{{rupiahSingkat .NilaiPenawaran}}</td>
+          <td class="td-num">{{probPersen .Probabilitas}}%</td>
+          <td class="td-num">{{rupiahSingkat .NilaiTertimbang}}</td>
+          <td><span class="badge st-{{slug .StatusBayar}}">{{.StatusBayar}}</span></td>
+          <td class="td-num">{{rupiahSingkat .SisaTagihan}}</td>
+          <td>{{if .DeadlineProject}}{{tanggal .DeadlineProject}}{{else}}&mdash;{{end}}</td>
+          <td class="td-aksi">
+            <span class="aksi-inline">
+              <a href="/freelance/{{.ID}}/edit" class="btn btn--kecil">Edit</a>
+              <form method="post" action="/freelance/{{.ID}}/pindah-lamaran"
+                    data-confirm="Pindahkan {{.NamaProject}} ke Lamaran Kerja?">
+                <button type="submit" class="btn btn--kecil">Pindah ke Lamaran</button>
+              </form>
+              <form method="post" action="/freelance/{{.ID}}/hapus"
+                    data-confirm="Hapus project {{.NamaProject}}?">
+                <button type="submit" class="btn btn--kecil btn--bahaya">Hapus</button>
+              </form>
+            </span>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="2">Total {{.Paginasi.Total}} project</th>
+          <th class="td-num">{{rupiahSingkat .TotalNilai}}</th>
+          <th></th>
+          <th class="td-num">{{rupiahSingkat .TotalWeighted}}</th>
+          <th></th>
+          <th class="td-num">{{rupiahSingkat .TotalSisa}}</th>
+          <th colspan="2"></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {{template "paginasi" (dict "Paginasi" .Paginasi "Filter" .Filter "Target" "tabel-freelance")}}
+  {{else}}
+  <div class="kosong">
+    <h3>Belum ada project di sini</h3>
+    <p>Kalau filternya sedang aktif, coba reset dulu. Atau catat lead pertamamu.</p>
+    <a href="/freelance/baru" class="btn btn--utama">{{template "ikon-plus"}} Tambah Project</a>
+  </div>
+  {{end}}
+</div>
+{{end}}

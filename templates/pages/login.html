@@ -1,0 +1,36 @@
+{{define "login"}}<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Masuk &middot; Tracker Lamaran</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div class="login-layar">
+  <div class="login-kartu">
+    <h1>Selamat datang</h1>
+    <p>Masuk untuk membuka tracker lamaran kerja dan project freelance kamu.</p>
+
+    {{if .Error}}<div class="flash flash--error">{{.Error}}</div>{{end}}
+    {{if .Flash}}<div class="flash flash--sukses">{{.Flash}}</div>{{end}}
+
+    <form method="post" action="/login">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" value="{{.Username}}"
+               autocomplete="username" autofocus required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn--utama">Masuk</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>{{end}}
+
+{{define "isi"}}{{end}}

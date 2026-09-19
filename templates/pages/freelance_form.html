@@ -1,0 +1,159 @@
+{{define "isi"}}
+{{$i := .Data.Item}}
+{{$p := .Data.Pilihan}}
+<header class="topbar">
+  <div class="topbar__kiri">
+    <h1>{{if .Data.Baru}}Tambah Project{{else}}Edit Project{{end}}</h1>
+    <p>{{if .Data.Baru}}Isi minimal nama klien dan nama project.{{else}}{{$i.Klien}} &middot; {{$i.NamaProject}}{{end}}</p>
+  </div>
+  <div class="topbar__aksi">
+    <a href="/freelance" class="btn">Kembali ke daftar</a>
+  </div>
+</header>
+
+<main class="utama">
+  {{if .Data.Error}}<div class="flash flash--error">{{.Data.Error}}</div>{{end}}
+
+  <form method="post" action="{{if .Data.Baru}}/freelance{{else}}/freelance/{{$i.ID}}{{end}}">
+    <div class="kartu">
+      <div class="kartu__isi">
+
+        <div class="form-grup">
+          <h3>Info Project</h3>
+          <div class="form-baris">
+            <div class="field">
+              <label for="klien">Klien <span class="wajib">*</span></label>
+              <input type="text" id="klien" name="klien" value="{{$i.Klien}}" required autofocus>
+            </div>
+            <div class="field">
+              <label for="nama_project">Nama Project <span class="wajib">*</span></label>
+              <input type="text" id="nama_project" name="nama_project" value="{{$i.NamaProject}}" required>
+            </div>
+            <div class="field">
+              <label for="stack">Stack</label>
+              <select id="stack" name="stack">
+                <option value="">&mdash; pilih &mdash;</option>
+                {{range index $p "stack"}}<option value="{{.}}" {{if eq $i.Stack .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="field">
+              <label for="sumber">Sumber</label>
+              <select id="sumber" name="sumber">
+                <option value="">&mdash; pilih &mdash;</option>
+                {{range index $p "sumber_freelance"}}<option value="{{.}}" {{if eq $i.Sumber .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="field field--lebar">
+              <label for="scope_singkat">Scope Singkat</label>
+              <input type="text" id="scope_singkat" name="scope_singkat" value="{{$i.ScopeSingkat}}"
+                     placeholder="Landing page 5 halaman + CMS sederhana">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grup">
+          <h3>Nilai &amp; Peluang</h3>
+          <div class="form-baris">
+            <div class="field">
+              <label for="nilai_penawaran">Nilai Penawaran</label>
+              <input type="text" inputmode="numeric" class="input-uang js-uang" id="nilai_penawaran"
+                     name="nilai_penawaran" value="{{if $i.NilaiPenawaran}}{{$i.NilaiPenawaran}}{{end}}" placeholder="12.000.000">
+            </div>
+            <div class="field">
+              <label for="probabilitas">Probabilitas Closing (%)</label>
+              <input type="number" id="probabilitas" name="probabilitas" min="0" max="100" step="5"
+                     value="{{probPersen $i.Probabilitas}}">
+              <small>Dipakai menghitung nilai tertimbang.</small>
+            </div>
+            <div class="field">
+              <label>Nilai Tertimbang</label>
+              <input type="text" value="{{rupiah $i.NilaiTertimbang}}" readonly>
+              <small>Dihitung otomatis: nilai &times; probabilitas.</small>
+            </div>
+            <div class="field">
+              <label for="status">Status Project</label>
+              <select id="status" name="status">
+                {{range index $p "status_freelance"}}<option value="{{.}}" {{if eq $i.Status .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grup">
+          <h3>Pembayaran</h3>
+          <div class="form-baris">
+            <div class="field">
+              <label for="status_bayar">Status Bayar</label>
+              <select id="status_bayar" name="status_bayar">
+                {{range index $p "status_bayar"}}<option value="{{.}}" {{if eq $i.StatusBayar .}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="field">
+              <label for="sudah_dibayar">Sudah Dibayar</label>
+              <input type="text" inputmode="numeric" class="input-uang js-uang" id="sudah_dibayar"
+                     name="sudah_dibayar" value="{{if $i.SudahDibayar}}{{$i.SudahDibayar}}{{end}}" placeholder="0">
+            </div>
+            <div class="field">
+              <label>Sisa Tagihan</label>
+              <input type="text" value="{{rupiah $i.SisaTagihan}}" readonly>
+              <small>Dihitung otomatis: nilai &minus; sudah dibayar.</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grup">
+          <h3>Jadwal</h3>
+          <div class="form-baris">
+            <div class="field">
+              <label for="tgl_masuk_lead">Tanggal Masuk Lead</label>
+              <input type="date" id="tgl_masuk_lead" name="tgl_masuk_lead" value="{{tanggalInput $i.TglMasukLead}}">
+            </div>
+            <div class="field">
+              <label for="deadline_proposal">Deadline Proposal</label>
+              <input type="date" id="deadline_proposal" name="deadline_proposal" value="{{tanggalInput $i.DeadlineProposal}}">
+            </div>
+            <div class="field">
+              <label for="tgl_mulai">Tanggal Mulai</label>
+              <input type="date" id="tgl_mulai" name="tgl_mulai" value="{{tanggalInput $i.TglMulai}}">
+            </div>
+            <div class="field">
+              <label for="deadline_project">Deadline Project</label>
+              <input type="date" id="deadline_project" name="deadline_project" value="{{tanggalInput $i.DeadlineProject}}">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grup" style="margin-bottom:0">
+          <h3>Tindak Lanjut &amp; Catatan</h3>
+          <div class="form-baris">
+            <div class="field field--lebar">
+              <label for="next_action">Next Action</label>
+              <input type="text" id="next_action" name="next_action" value="{{$i.NextAction}}"
+                     placeholder="Follow up proposal H+3">
+            </div>
+            <div class="field field--lebar">
+              <label for="catatan">Catatan</label>
+              <textarea id="catatan" name="catatan" placeholder="Nego budget, revisi scope, dll.">{{$i.Catatan}}</textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="kartu__isi" style="padding-top:0">
+        <div class="form-kaki">
+          <button type="submit" class="btn btn--utama">{{if .Data.Baru}}Simpan Project{{else}}Simpan Perubahan{{end}}</button>
+          <a href="/freelance" class="btn">Batal</a>
+          {{if not .Data.Baru}}
+          <span class="kanan">
+            <form method="post" action="/freelance/{{$i.ID}}/hapus"
+                  onsubmit="return confirm('Hapus project {{$i.NamaProject}}?')">
+              <button type="submit" class="btn btn--bahaya">Hapus project</button>
+            </form>
+          </span>
+          {{end}}
+        </div>
+      </div>
+    </div>
+  </form>
+</main>
+{{end}}
