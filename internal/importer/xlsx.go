@@ -30,11 +30,17 @@ func Import(ctx context.Context, st *store.Store, path string) (Hasil, error) {
 	}
 	defer f.Close()
 
-	if err := importLamaran(ctx, st, f, &h); err != nil {
+	adaLamaran, err := importLamaran(ctx, st, f, &h)
+	if err != nil {
 		return h, err
 	}
-	if err := importFreelance(ctx, st, f, &h); err != nil {
+	adaFreelance, err := importFreelance(ctx, st, f, &h)
+	if err != nil {
 		return h, err
+	}
+	if !adaLamaran && !adaFreelance {
+		return h, fmt.Errorf("file tidak punya sheet lamaran (%s) maupun Freelance",
+			strings.Join(sheetLamaran, ", "))
 	}
 	return h, nil
 }
@@ -43,14 +49,17 @@ func Import(ctx context.Context, st *store.Store, path string) (Hasil, error) {
 // (hasil export aplikasi ini sendiri).
 var sheetLamaran = []string{"Full-Time", "Lamaran"}
 
-func importLamaran(ctx context.Context, st *store.Store, f *excelize.File, h *Hasil) error {
+// importLamaran mengembalikan false (tanpa error) kalau file tidak punya
+// sheet lamaran sama sekali, supaya file yang cuma berisi salah satu jenis
+// data (lamaran saja atau freelance saja) tetap bisa diimpor.
+func importLamaran(ctx context.Context, st *store.Store, f *excelize.File, h *Hasil) (bool, error) {
 	sheet, ok := cariSheet(f, sheetLamaran...)
 	if !ok {
-		return fmt.Errorf("sheet lamaran tidak ditemukan (dicoba: %s)", strings.Join(sheetLamaran, ", "))
+		return false, nil
 	}
 	rows, err := bacaSheet(f, sheet, "Perusahaan")
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	for _, row := range rows {
@@ -59,7 +68,7 @@ func importLamaran(ctx context.Context, st *store.Store, f *excelize.File, h *Ha
 		}
 		tglApply, err := row.tanggal("Tgl Apply")
 		if err != nil {
-			return fmt.Errorf("sheet %s baris %d kolom Tgl Apply: %w", sheet, row.nomor, err)
+			return false, fmt.Errorf("sheet %s baris %d kolom Tgl Apply: %w", sheet, row.nomor, err)
 		}
 		tglUpdate, err := row.tanggal("Tgl Update Terakhir")
 		if err != nil || tglUpdate.IsZero() {
@@ -89,7 +98,7 @@ func importLamaran(ctx context.Context, st *store.Store, f *excelize.File, h *Ha
 
 		duplikat, err := st.FulltimeAdaDuplikat(ctx, item.Perusahaan, item.Posisi, item.TglApply)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if duplikat {
 			fmt.Printf("  dilewati (sudah ada): %s - %s\n", item.Perusahaan, item.Posisi)
@@ -97,22 +106,24 @@ func importLamaran(ctx context.Context, st *store.Store, f *excelize.File, h *Ha
 			continue
 		}
 		if _, err := st.CreateFulltime(ctx, item); err != nil {
-			return fmt.Errorf("gagal menyimpan %s: %w", item.Perusahaan, err)
+			return false, fmt.Errorf("gagal menyimpan %s: %w", item.Perusahaan, err)
 		}
 		fmt.Printf("  masuk: %s - %s (%s)\n", item.Perusahaan, item.Posisi, item.TglApply.Format("2006-01-02"))
 		h.LamaranMasuk++
 	}
-	return nil
+	return true, nil
 }
 
-func importFreelance(ctx context.Context, st *store.Store, f *excelize.File, h *Hasil) error {
+// importFreelance mengembalikan false (tanpa error) kalau file tidak punya
+// sheet Freelance, supaya file yang cuma berisi data lamaran tetap bisa diimpor.
+func importFreelance(ctx context.Context, st *store.Store, f *excelize.File, h *Hasil) (bool, error) {
 	sheet, ok := cariSheet(f, "Freelance")
 	if !ok {
-		return fmt.Errorf("sheet Freelance tidak ditemukan")
+		return false, nil
 	}
 	rows, err := bacaSheet(f, sheet, "Klien")
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	for _, row := range rows {
@@ -121,7 +132,7 @@ func importFreelance(ctx context.Context, st *store.Store, f *excelize.File, h *
 		}
 		tglLead, err := row.tanggal("Tgl Masuk Lead")
 		if err != nil {
-			return fmt.Errorf("sheet %s baris %d kolom Tgl Masuk Lead: %w", sheet, row.nomor, err)
+			return false, fmt.Errorf("sheet %s baris %d kolom Tgl Masuk Lead: %w", sheet, row.nomor, err)
 		}
 
 		item := model.Freelance{
@@ -152,7 +163,7 @@ func importFreelance(ctx context.Context, st *store.Store, f *excelize.File, h *
 
 		duplikat, err := st.FreelanceAdaDuplikat(ctx, item.Klien, item.NamaProject, item.TglMasukLead)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if duplikat {
 			fmt.Printf("  dilewati (sudah ada): %s - %s\n", item.Klien, item.NamaProject)
@@ -160,12 +171,12 @@ func importFreelance(ctx context.Context, st *store.Store, f *excelize.File, h *
 			continue
 		}
 		if _, err := st.CreateFreelance(ctx, item); err != nil {
-			return fmt.Errorf("gagal menyimpan %s: %w", item.NamaProject, err)
+			return false, fmt.Errorf("gagal menyimpan %s: %w", item.NamaProject, err)
 		}
 		fmt.Printf("  masuk: %s - %s (%s)\n", item.Klien, item.NamaProject, item.TglMasukLead.Format("2006-01-02"))
 		h.ProjectMasuk++
 	}
-	return nil
+	return true, nil
 }
 
 // baris memetakan nama header ke nilai mentah selnya.
